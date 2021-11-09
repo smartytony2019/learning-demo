@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nodeselector
+  namespace: dev
+spec:
+  nodeSelector: 
+    nodeenv: pro  # 指定调度到具有nodeenv=pro标签节点上
+  containers:
+  - name: nginx
+    image: nginx:1.17.1

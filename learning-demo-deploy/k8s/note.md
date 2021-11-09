@@ -47,7 +47,7 @@ net.ipv4.ip_forward = 1
 
 
 
-> yum install -y ipset ipvsadmin
+> yum install -y ipset ipvsadmin ipvsadm
 > cat <<EOF > /etc/sysconfig/modules/ipvs.modules
 #!/bin/bash
 modprobe -- ip_vs
@@ -842,6 +842,1541 @@ spec:
   - name: nginx
     image: nginx:1.17.1
 ```
+
+
+
+
+
+##### 亲和性调度
+
+> pod-nodeaffinity-required.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: pod-nodeaffinity-required
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:  # 硬限制
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: nodeenv
+            operator: In
+            values: ["xxx", "yyy"]
+```
+
+
+
+> pod-nodeaffinity-preferred.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: pod-nodeaffinity-preferred
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:  # 软限制
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: nodeenv
+            operator: In
+            values: ["xxx", "yyy"]
+```
+
+
+
+
+
+> pod-podaffinity-target.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-podaffinity-target
+  namespace: dev
+  labels:
+    podenv: pro
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  nodeName: node1
+```
+
+> pod-podaffinity-required.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-podaffinity-required
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  affinity:
+    podAffinity:  # pod亲和性
+      requiredDuringSchedulingIgnoredDuringExecution:  # 硬限制
+      - labelSelector:
+          matchExpressions:
+          - key: podenv
+            operator: In
+            values: ["xxx", "yyy"]
+        topologyKey: kubernetes.io/hostname
+```
+
+
+
+> pod-podantiaffinity-required.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-podantiaffinity-required
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  affinity:
+    podAntiAffinity:  # pod亲和性
+      requiredDuringSchedulingIgnoredDuringExecution:  # 硬限制
+      - labelSelector:
+          matchExpressions:
+          - key: podenv
+            operator: In
+            values: ["pro"]
+        topologyKey: kubernetes.io/hostname
+```
+
+
+
+
+
+#### 污点
+
+```bash
+
+> kubectl taint nodes node1 tag=heima:PreferNoSchedule
+
+> kubectl run taint1 --image=nginx:1.17.1 -n dev
+> kubectl get pod -n dev -o wide
+
+> kubectl taint nodes node1 tag:PreferNoSchedule-
+> kubectl taint nodes node1 tag=heima:NoSchedule
+
+> kubectl run taint2 --image=nginx:1.17.1 -n dev
+> kubectl get pods taint2 -n dev -o wide
+```
+
+
+
+
+
+#### 容忍
+
+> pod-toleration.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-toleration
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+  tolerations:       # 添加容忍
+  - key: "tag"       # 要容忍的污点的key
+    operator: "Equal" # 操作符
+    value: "heima"    # 容忍的污点的value
+    effect: "NoSchedule"  # 容忍规则
+```
+
+
+
+
+
+#### Pod控制器
+
+##### ReplicaSet
+
+> pc-replicaset.yml
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata: 
+  name: pc-replicaset
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+```
+
+
+
+```bash
+
+> kubectl apply -f pc-replicaset.yml
+> kubectl get rs pc-replicaset -n dev -o wide
+> kubectl edit rs pc-replicaset -n dev				  # 扩容
+> kubectl scale rs pc-replicaset --replicas=2 -n dev  # 缩容
+```
+
+
+
+
+
+##### Deployment(deploy)
+
+> pc-deployment.yml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pc-deployment
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+```
+
+
+
+```bash
+> kubectl apply -f pc-deployment.yml
+> kubectl get deployment -n dev -o dev
+> kubectl get rs -n dev
+> kubectl get pod -n dev
+
+> kubectl scale deploy pc-deployment --replicas=5 -n dev
+> kubectl edit deploy pc-deployment -n dev
+```
+
+
+
+> pc-deployment.yml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pc-deployment
+  namespace: dev
+spec:
+  strategy:          # 策略
+    type: Recreate   # 重建更新策略
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+```
+
+```bash
+> kubectl set image deployment pc-deployment nginx=nginx:1.17.2 -n dev
+```
+
+
+
+
+
+> pc-deployment.yml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pc-deployment
+  namespace: dev
+spec:
+  strategy:               # 策略
+    type: RollingUpdate   # 滚动更新策略
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+```
+
+```bash
+> kubectl set image deployment pc-deployment nginx=nginx:1.17.3 -n dev
+
+```
+
+
+
+#### 版本回退
+
+```bash
+> kubectl apply -f pc-deployment.yml --record
+> kubectl set image deploy pc-deployment nginx=nginx:1.17.2 -n dev
+> kubectl rollout status deploy pc-deployment -n dev
+> kubectl rollout history deploy pc-deployment -n dev
+> kubectl get rs -n dev
+
+> kubectl set image deploy pc-deployment nginx=nginx:1.17.3 -n dev
+> kubectl rollout status deploy pc-deployment -n dev
+> kubectl rollout history deploy pc-deployment -n dev
+
+> kubectl get rs -n dev -o wide         # 查看当前镜像版本
+
+> kubectl get deploy -n dev -o wide		# 查看当前pod控制器使用的镜像版本
+> kubectl rollout undo deploy pc-deployment --to-revision=1 -n dev    # 回退版本
+> kubectl get deploy -n dev -o wide
+
+```
+
+
+
+
+
+##### 金丝雀发布
+
+```yaml
+> kubectl set image deploy pc-deployment nginx=nginx:1.17.4 -n dev && kubectl rollout pause deployment pc-deployment -n dev
+
+> kubectl rollout status deploy pc-deployment -n dev
+> kubectl get rs -n dev -o wide
+> kubectl get pods -n dev
+
+> kubectl rollout resume deploy pc-deployment -n dev
+
+```
+
+
+
+
+
+#### HPA
+
+##### 准备
+
+```bash
+
+> yum install -y git
+> git clone -b v0.3.6 https://github.com/kubernetes-sigs/metrics-server.git
+
+> cd metrics-server/deploy/1.8+
+> vim metrics-server-deployment.yaml
+```
+
+
+
+> metrics-server-deployment.yaml
+
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: kube-system
+  labels:
+    k8s-app: metrics-server
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+  template:
+    metadata:
+      name: metrics-server
+      labels:
+        k8s-app: metrics-server
+    spec:
+	  # 添加处一
+      hostNetwork: true
+      serviceAccountName: metrics-server
+      volumes:
+      - name: tmp-dir
+        emptyDir: {}
+      containers:
+      - name: metrics-server
+        image: k8s.gcr.io/metrics-server-amd64:v0.3.6
+        imagePullPolicy: Always
+		# 添加处二
+        args:
+        - --kubelet-insecure-tls
+        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+
+        volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
+```
+
+
+
+```bash
+> kubectl top node
+
+> kubectl top pod -n kube-system
+
+> kubectl run nginx --image=nginx:1.17.1 --requests=cpu=100m -n dev
+> kubectl expose deployment nginx --type=NodePort --port=80 -n dev
+> kubectl get deploy,pod,svc -n dev
+
+```
+
+
+
+##### 部署
+
+> pc-hpa.yml
+
+```yaml
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pc-hpa
+  namespace: dev
+spec:
+  minReplicas: 1      # 最小pod数量
+  maxReplicas: 10     # 最大pod数量
+  targetCPUUtilizationPercentage: 3      # CPU使用率指标
+  scaleTargetRef:      # 指定要控制的nginx信息
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx
+```
+
+
+
+```bash
+> kubectl create -f pc-hpa.yml
+> kubectl get hpa -n dev
+```
+
+
+
+
+
+
+
+#### DaemonSet
+
+> pc-daemonset.yml
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pc-daemonset
+  namespace: dev
+spec:
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+```
+
+
+
+```bash
+> kubectl apply -f pc-daemonset.yml
+> kubectl get ds -n dev
+```
+
+
+
+
+
+#### Job
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata: 
+  name: pc-job
+  namespace: dev
+spec:
+  manualSelector: true
+  completions: 6
+  parallelism: 3
+  selector:
+    matchLabels:
+      app: counter-pod
+  template:
+    metadata:
+      labels:
+        app: counter-pod
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: counter
+        image: busybox:1.30
+        command: ["bin/sh","-c","for i in 9 8 7 6 5 4 3 2 1; do echo $i; sleep 3; done"]
+```
+
+
+
+```bash
+> kubectl create -f pc-job.yml
+> kubectl get job -n dev -o wide -w
+```
+
+
+
+
+
+
+
+##### CronJob
+
+```yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: pc-cronjob
+  namespace: dev
+  labels:
+    controller: cronjob
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    metadata:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never    # [Never | OnFailure]
+          containers:
+          - name: counter
+            image: busybox:1.30
+            command: ["bin/sh","-c","for i in 9 8 7 6 5 4 3 2 1;do echo $i;sleep 3; done"]
+```
+
+
+
+```bash
+> kubectl apply -f pc-cronjob.yml
+> kubectl get cj -n dev
+> kubectl get jobs -n dev
+```
+
+
+
+
+
+#### Service
+
+```bash
+> kubectl edit cm kube-proxy -n kube-system
+mode: "ipvs"
+> kubectl delete pod -l k8s-app=kube-proxy -n kube-system
+> ipvsadm -Ln
+```
+
+
+
+> deployment.yml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pc-deployment
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+        ports:
+        - containerPort: 80
+```
+
+
+
+> service-clusterip.yml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-clusterip
+  namespace: dev
+spec:
+  sessionAffinity: ClientIP
+  selector:
+    app: nginx-pod
+  clusterIP: 10.97.97.97
+  type: ClusterIP
+  ports:
+  - port: 80          # Service端口
+    targetPort: 80    # pod端口
+```
+
+
+
+```bash
+> kubectl get endpoints -n dev
+
+```
+
+
+
+#### HeaderLiness
+
+> service-headliness.yml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-headliness
+  namespace: dev
+spec:
+  sessionAffinity: ClientIP
+  selector:
+    app: nginx-pod
+  clusterIP: None
+  type: ClusterIP
+  ports:
+  - port: 80          # Service端口
+    targetPort: 80    # pod端口
+```
+
+
+
+```bash
+> kubectl exec -it pc-deployment-6696798b78-5nf4l -n dev /bin/sh
+# cat /etc/resolv.conf (copy nameserver)
+> dig @10.96.0.10 service-headliness.dev.svc.cluster.local
+```
+
+
+
+#### NodePort
+
+> service-nodeport.yml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-nodeport
+  namespace: dev
+spec:
+  selector:
+    app: nginx-pod
+  type: NodePort
+  ports:
+  - port: 80          # Service端口
+    nodePort: 30002   # 指定绑定的node的端口(默认取值范围为30000-32767)如不指定会默认分配
+    targetPort: 80    # pod端口
+```
+
+
+
+#### ExternalName
+
+> service-externalname.yml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-externalname
+  namespace: dev
+spec:
+  type: ExternalName
+  externalName: www.baidu.com
+```
+
+
+
+```bash
+> kubectl describe svc service-externalname -n dev
+> dig @10.96.0.10 service-externalname.dev.svc.cluster.local
+```
+
+
+
+
+
+
+
+
+
+
+
+#### Ingress
+
+```bash
+> mkdir ingress-controller && cd ingress-controller
+
+> wget https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+
+> wget https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/baremetal/service-nodeport.yaml
+
+> kubectl apply -f ./
+
+> kubectl get pod -n ingress-nginx
+
+
+
+```
+
+
+
+
+
+> ingress-tomcat-nginx.yml
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-pod
+  template:
+    metadata:
+      labels:
+        app: nginx-pod
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.1
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tomcat-deployment
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tomcat-pod
+  template:
+    metadata:
+      labels:
+        app: tomcat-pod
+    spec:
+      containers:
+      - name: tomcat
+        image: tomcat:8.5-jre10-slim
+        ports:
+        - containerPort: 8080
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: dev
+spec:
+  selector:
+    app: nginx-pod
+  clusterIP: None
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: tomcat-service
+  namespace: dev
+spec:
+  selector:
+    app: tomcat-pod
+  clusterIP: None
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+```
+
+
+
+> ingress-http.yml
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-http
+  namespace: dev
+spec:
+  rules:
+  - host: nginx.itheima.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx-service
+          servicePort: 80
+  - host: tomcat.itheima.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: tomcat-service
+          servicePort: 8080
+```
+
+
+
+```bash
+> kubectl create -f ingress-http.yml
+> kubectl get ing ingress-http -n dev
+> kubectl get svc -n ingress-nginx     # 80->http 443->https
+
+> kubectl describe ing ingress-http -n dev
+```
+
+
+
+
+
+> ingress-https.yml
+
+```bash
+
+> openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/C=CN/ST=BJ/L=BJ/O=nginx/CN=itheima.com"
+
+> kubectl create secret tls tls-secret --key tls.key --cert tls.crt
+
+```
+
+
+
+> ingress-https.yml
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata: 
+  name: ingress-https
+  namespace: dev
+spec:
+  tls:
+    - hosts:
+      - nginx.itheima.com
+      - tomcat.itheima.com
+      secretName: tls-secret  # 指定秘钥
+  rules:
+  - host: nginx.itheima.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx-service
+          servicePort: 80
+  - host: tomcat.itheima.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: tomcat-service
+          servicePort: 8080
+```
+
+
+
+
+
+#### Volume
+
+##### EmptyDir
+
+> volume-emptydir.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-emptydir
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /var/log/nginx
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","tail -f /logs/access.log"]
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /logs
+  volumes:
+  - name: logs-volume
+    emptyDir: {}
+```
+
+
+
+```bash
+> kubectl apply -f volume-emptydir.yml
+
+> kubectl logs -f volume-emptydir -n dev -c busybox
+
+```
+
+
+
+##### HostPath
+
+> volume-hostpath.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-hostpath
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    ports:
+    - containerPort: 80
+    volumeMounts: 
+    - name: logs-volume
+      mountPath: /var/log/nginx
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","tail -f /logs/access.log"]
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /logs
+  volumes:
+  - name: logs-volume
+    hostPath:
+      path: /root/logs
+      type: DirectoryOrCreate
+```
+
+
+
+
+
+#### nfs
+
+```bash
+# 所有节点需要安装
+> yum install -y nfs-utils
+
+# NFS服务端
+> mkdir -pv /root/data/nfs
+> vim /etc/exports
+/root/data/nfs    192.168.80.0/24(rw,no_root_squash)
+> systemctl start nfs
+```
+
+
+
+
+
+> volume-nfs.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-nfs
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    ports:
+    - containerPort: 80
+    volumeMounts: 
+    - name: logs-volume
+      mountPath: /var/log/nginx
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","tail -f /logs/access.log"]
+    volumeMounts:
+    - name: logs-volume
+      mountPath: /logs
+  volumes:
+  - name: logs-volume
+    nfs:
+      server: 192.168.80.100
+      path: /root/data/nfs
+```
+
+
+
+```bash
+> kubectl apply -f volume-nfs.yml
+> cd /root/data/nfs && cat access.log
+```
+
+
+
+
+
+#### pv
+
+```yaml
+> mkdir -pv /root/data/{pv1,pv2,pv3}
+> vim /etc/exports
+/root/data/pv1      192.168.80.0/24(rw,no_root_squash)
+/root/data/pv2      192.168.80.0/24(rw,no_root_squash)
+/root/data/pv3      192.168.80.0/24(rw,no_root_squash)
+
+> systemctl restart nfs
+```
+
+
+
+> pv.yml
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv1
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /root/data/pv1
+    server: 192.168.80.100
+
+
+---
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv2
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /root/data/pv2
+    server: 192.168.80.100
+
+
+---
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv3
+spec:
+  capacity:
+    storage: 3Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /root/data/pv3
+    server: 192.168.80.100
+
+
+```
+
+
+
+```bash
+> kubectl apply -f pv.yml
+> kubectl get pv -o wide
+
+```
+
+
+
+
+
+#### pvc
+
+> pvc.yml
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc1
+  namespace: dev
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc2
+  namespace: dev
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc3
+  namespace: dev
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+
+```
+
+
+
+```bash
+> kubectl get pvc -n dev
+
+```
+
+
+
+> pods.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","while true; do echo pod1 >> /root/out.txt; sleep 10; done;"]
+    volumeMounts:
+    - name: volume
+      mountPath: /root/
+  volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc1
+        readOnly: false
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod2
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","while true; do echo pod2 >> /root/out.txt; sleep 10; done;"]
+    volumeMounts:
+    - name: volume
+      mountPath: /root/
+  volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc2
+        readOnly: false
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod3
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    command: ["/bin/sh","-c","while true; do echo pod3 >> /root/out.txt; sleep 10; done;"]
+    volumeMounts:
+    - name: volume
+      mountPath: /root/
+  volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc3
+        readOnly: false
+
+```
+
+
+
+```bash
+> kubectl apply -f pods.yml
+```
+
+
+
+
+
+#### ConfigMap
+
+> configmap.yml
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+  namespace: dev
+data:
+  info: |
+    username:admin
+    password:123456
+```
+
+
+
+``` bash
+> kubectl apply -f configmap.yml
+> kubectl describe cm configmap -n dev
+```
+
+
+
+> pod-configmap.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-configmap
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    volumeMounts:
+    - name: config
+      mountPath: /configmap/config
+  volumes:
+  - name: config
+    configMap:
+      name: configmap
+```
+
+
+
+```bash
+> kubectl apply -f pod-configmap.yml
+> kubectl get pod pod-configmap -n dev
+> kubectl exec -it pod-configmap -n dev /bin/sh
+cat /configmap/config/info
+> kubectl edit cm configmap -n dev
+```
+
+
+
+
+
+#### secret
+
+```bash
+
+> echo -n 'admin' | base64
+YWRtaW4=
+> echo -n '123456' | base64
+MTIzNDU2
+
+```
+
+
+
+> secret.yml
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret
+  namespace: dev
+type: Opaque
+data:
+  username: YWRtaW4=
+  password: MTIzNDU2
+```
+
+
+
+```bash
+> kubectl describe secret/secret -n dev
+
+```
+
+
+
+> pod-secret.yml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-secret
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    volumeMounts:
+    - name: config
+      mountPath: /secret/config
+  volumes:
+  - name: config
+    secret:
+      secretName: secret
+
+```
+
+
+
+```bash
+> kubectl exec -it pod-secret -n dev /bin/sh
+```
+
+
+
+
+
+#### 安全认证
+
+```bash
+
+> cd /etc/kubernetes/pki
+> (umask 077; openssl genrsa -out devman.key 2048)
+> openssl req -new -key devman.key -out devman.csr -subj "/CN=devman/O=devgroup"
+
+> openssl x509 -req -in devman.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out devman.crt -days 3650
+
+# 3) 设置集群，用户，上下文信息
+> kubectl config set-cluster kubernetes --embed-certs=true --certificate-authority=/etc/kubernetes/pki/ca.crt --server=https://192.168.80.100:6443
+
+> kubectl config set-credentials devman --embed-certs=true --client-certificate=/etc/kubernetes/pki/devman.crt --client-key=/etc/kubernetes/pki/devman.key
+
+> kubectl config set-context devman@kubernetes --cluster=kubernetes --user=devman
+
+# 切换帐户到devman
+> kubectl config use-context devman@kubernetes
+
+# 查看dev下pod，发现没有权限
+> kubectl get pods -n dev
+
+# 切换到admin帐号
+> kubectl config use-context kubernetes-admin@kubernetes
+
+
+
+```
+
+
+
+> dev-role.yml
+
+```yaml
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: dev-role
+  namespace: dev
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: authorization-role-binding
+  namespace: dev
+subjects:
+- kind: User
+  name: devman
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: dev-role
+  apiGroup: rbac.authorization.k8s.io
+
+
+```
+
+
+
+```bash
+
+> kubectl apply -f dev-role.yml
+> kubectl config use-context devman@kubernetes
+# 现在可以拿到了，因为添加权限了
+> kubectl get pod -n dev
+# 切回admin帐户
+> kubectl config use-context kubernetes-admin@kubernetes
+```
+
+
+
+
+
+#### DashBoard
+
+```bash
+
+> wget https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+
+> vim recommended.yml
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  type: NodePort              # 新增
+  ports:
+    - port: 443
+      targetPort: 8443
+      nodePort: 30009         # 新增
+  selector:
+    k8s-app: kubernetes-dashboard
+
+
+```
+
+
+
+```bash
+
+> kubectl apply -f recommended.yml
+> kubectl get pod,svc -n kubernetes-dashboard
+
+# 创建帐号，获取token
+# 1) 创建帐号
+> kubectl create serviceaccount dashboard-admin -n kubernetes-dashboard
+# 2） 授权
+> kubectl create clusterrolebinding dashboard-admin-rb --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
+# 3) 获取帐号
+> kubectl get secrets -n kubernetes-dashboard | grep dashboard-admin
+# 4) 查看token
+> kubectl describe secrets dashboard-admin-token-xxxxx -n kubernetes-dashboard
+```
+
+
+
+
+
+
 
 
 
