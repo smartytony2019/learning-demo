@@ -5,6 +5,7 @@
 192.168.80.100 master
 192.168.80.101 node1
 192.168.80.102 node2
+192.168.80.103 node3
 
 
 
@@ -47,7 +48,7 @@ net.ipv4.ip_forward = 1
 
 
 
-> yum install -y ipset ipvsadmin ipvsadm
+> yum install -y ipset ipvsadm
 > cat <<EOF > /etc/sysconfig/modules/ipvs.modules
 #!/bin/bash
 modprobe -- ip_vs
@@ -61,13 +62,6 @@ EOF
 > chmod +x /etc/sysconfig/modules/ipvs.modules
 > /bin/bash /etc/sysconfig/modules/ipvs.modules
 > lsmod | grep -e ip_vs -e nf_conntrack_ipv4
-
-
-
-
-
-
-
 
 ```
 
@@ -184,8 +178,8 @@ done
 
 
 # 节点加入master
-> kubeadm join 192.168.80.100:6443 --token htey45.21dllrindv7oan7b \
-    --discovery-token-ca-cert-hash sha256:20c7bb3e62cb9d363a01bae768ac6cd7541eebbfc3f82c2b082b2515f7f13384
+> kubeadm join 192.168.80.100:6443 --token m4bbrm.s2kn8acy3jmr1zp1 \
+    --discovery-token-ca-cert-hash sha256:349c47c4460dce4a1d473bfd714313317faca5769f13819258028fde9b09f41f
 
 ```
 
@@ -1269,6 +1263,7 @@ spec:
 
 
 ```bash
+> kubectl apply -f ./
 > kubectl top node
 
 > kubectl top pod -n kube-system
@@ -1588,9 +1583,6 @@ spec:
 > kubectl apply -f ./
 
 > kubectl get pod -n ingress-nginx
-
-
-
 ```
 
 
