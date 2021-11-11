@@ -13,7 +13,7 @@ data:
     bind 0.0.0.0
     appendonly yes
     daemonize no
-    requirepass Hangzhou@123
+    requirepass dream123
     pidfile /srv/redis-6379.pid
 
 ---
@@ -77,6 +77,7 @@ spec:
           name: redis-config
 
 ---
+
 apiVersion: v1
 kind: Service
 metadata:

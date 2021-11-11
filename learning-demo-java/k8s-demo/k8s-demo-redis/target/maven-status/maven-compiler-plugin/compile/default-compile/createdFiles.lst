@@ -1,0 +1,3 @@
+com\xinbo\k8s\demo\redis\config\RedisConfig.class
+com\xinbo\k8s\demo\redis\controller\RedisController.class
+com\xinbo\k8s\demo\redis\K8sDemoRedisApplication.class
