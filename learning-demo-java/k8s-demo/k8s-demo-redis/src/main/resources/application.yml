@@ -6,7 +6,7 @@ spring:
 
   redis:
     database: 0
-    host: 127.0.0.1
+    host: redis.dev.svc.cluster.local
     port: 6380
     Password: dream123
     jedis:
