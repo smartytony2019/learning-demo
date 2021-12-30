@@ -16,9 +16,12 @@ spec:
       labels:
         app: k8s-demo-redis
     spec:
+      nodeSelector:
+        app: p1
       containers:
       - name: k8s-demo-redis
         image: k8s-demo-redis:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 10000
 
@@ -35,9 +38,8 @@ spec:
   type: ClusterIP
   clusterIP: None
   ports:
-    - name: tcp
-      port: 10000
-      nodePort: 10000
+  - port: 10000
+    targetPort: 10000
   selector:
     app: k8s-demo-redis
 

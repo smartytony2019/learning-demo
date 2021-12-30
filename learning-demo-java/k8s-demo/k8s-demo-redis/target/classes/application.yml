@@ -3,11 +3,15 @@ server:
 spring:
   application:
     name: k8s-demo-redis
-
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos-headless.default.svc.cluster.local
+#        ip: k8s-demo-redis.svc.cluster.local
   redis:
     database: 0
     host: redis.dev.svc.cluster.local
-    port: 6380
+    port: 6379
     Password: dream123
     jedis:
       pool:

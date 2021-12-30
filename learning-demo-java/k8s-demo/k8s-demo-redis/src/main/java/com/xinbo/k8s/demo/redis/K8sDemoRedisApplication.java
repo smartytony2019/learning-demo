@@ -2,6 +2,7 @@ package com.xinbo.k8s.demo.redis;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
  * @author 熊二
@@ -9,10 +10,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @desc file desc
  */
 @SpringBootApplication
+@EnableDiscoveryClient
 public class K8sDemoRedisApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(K8sDemoRedisApplication.class, args);
     }
-
 }

@@ -9,7 +9,7 @@ metadata:
 data:
   redis.conf: |-
     dir /srv
-    port 6380
+    port 6379
     bind 0.0.0.0
     appendonly yes
     daemonize no
@@ -86,11 +86,11 @@ metadata:
   labels:
     app: redis
 spec:
-  type: NodePort
+  clusterIP: None
+  type: ClusterIP
   ports:
-    - name: tcp
-      port: 6379
-      nodePort: 30379
+  - port: 6379
+    targetPort: 6379
   selector:
     app: redis
 
