@@ -6,13 +6,15 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: nacos-headless.default.svc.cluster.local
+#        server-addr: nacos-headless.default.svc.cluster.local
+        server-addr: 127.0.0.1
 #        ip: k8s-demo-redis.svc.cluster.local
   redis:
     database: 0
-    host: redis.dev.svc.cluster.local
+#    host: redis.dev.svc.cluster.local
+    host: 127.0.0.1
     port: 6379
-    Password: dream123
+#    Password: dream123
     jedis:
       pool:
         max-active: 8
@@ -20,3 +22,14 @@ spring:
         max-idle: 8
         min-idle: 0
     timeout: 2000
+
+  rabbitmq:
+    addresses: 192.168.80.45
+    port: 5672
+    username: user
+    password: bitnami
+    listener:
+      type: simple
+      simple:
+        default-requeue-rejected: false  #未消费则重新加入队列
+        acknowledge-mode: manual

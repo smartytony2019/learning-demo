@@ -180,6 +180,11 @@ done
 # 节点加入master
 > kubeadm join 192.168.80.100:6443 --token m4bbrm.s2kn8acy3jmr1zp1 \
     --discovery-token-ca-cert-hash sha256:349c47c4460dce4a1d473bfd714313317faca5769f13819258028fde9b09f41f
+    
+    
+> kubeadm join 192.168.80.45:6443 --token otp85l.3aja7yret17e1d9j \
+    --discovery-token-ca-cert-hash sha256:6e8eb231c6de2719748f9c36e811f78e6fa85b4b9583a8111ccd4fdcbb1a93b9
+
 
 ```
 

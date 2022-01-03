@@ -1,0 +1,95 @@
+
+# PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbit-nfs-pv
+  namespace: default
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-rabbit
+  nfs:
+    path: /root/data/nfs
+    server: 192.168.80.45
+    
+---
+# pvc
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: rabbit-nfs-pvc
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-rabbit
+
+---
+
+# deployment
+        
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbit-nfs-deploy
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbit
+  template:
+    metadata:
+      labels:
+        app: rabbit
+    spec:
+      containers:
+      - name: rabbit
+        image:  bitnami/rabbitmq:3.8.14
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 15672
+          name: rabbit15672
+          protocol: TCP
+        - containerPort: 5672 
+          name: rabbit5672 
+          protocol: TCP
+        volumeMounts:
+        - name: rabbit-pvc
+          mountPath: /data/db
+      volumes:
+       - name: rabbit-pvc
+         persistentVolumeClaim:
+           claimName: rabbit-nfs-pvc
+---
+# svc
+apiVersion: v1  
+kind: Service  
+metadata:  
+ name: rabbit-nfs-service  
+spec:  
+ type: NodePort  
+ ports:  
+ - name: rabbit15672  
+   nodePort: 30672  
+   port: 15672  
+   protocol: TCP  
+   targetPort: 15672  
+ - name: rabbit5672   
+   nodePort: 30072   
+   port: 5672   
+   protocol: TCP   
+   targetPort: 5672  
+ selector:  
+   app: rabbit  
+
+#初始化用户名：user
+#初始化密码：bitnami
