@@ -6,15 +6,13 @@ spring:
   cloud:
     nacos:
       discovery:
-#        server-addr: nacos-headless.default.svc.cluster.local
-        server-addr: 127.0.0.1
-#        ip: k8s-demo-redis.svc.cluster.local
+        server-addr: nacos-headless.default.svc.cluster.local:8848
+#        ip: k8s-demo-redis.default.svc.cluster.local
   redis:
     database: 0
-#    host: redis.dev.svc.cluster.local
-    host: 127.0.0.1
+    host: redis.default.svc.cluster.local
     port: 6379
-#    Password: dream123
+    password: dream123
     jedis:
       pool:
         max-active: 8
@@ -24,10 +22,10 @@ spring:
     timeout: 2000
 
   rabbitmq:
-    addresses: 192.168.80.45
+    addresses: rabbitmq-cluster.default.svc.cluster.local
     port: 5672
-    username: user
-    password: bitnami
+    username: admin
+    password: admin123
     listener:
       type: simple
       simple:

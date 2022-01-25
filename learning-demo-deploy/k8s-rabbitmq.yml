@@ -74,9 +74,9 @@ spec:
 apiVersion: v1  
 kind: Service  
 metadata:  
- name: rabbit-nfs-service  
-spec:  
- type: NodePort  
+ name: rabbit-nfs-service
+spec:
+ type: NodePort
  ports:  
  - name: rabbit15672  
    nodePort: 30672  
@@ -93,3 +93,4 @@ spec:
 
 #初始化用户名：user
 #初始化密码：bitnami
+#web 30672  30072

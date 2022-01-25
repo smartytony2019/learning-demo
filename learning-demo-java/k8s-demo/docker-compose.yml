@@ -1,0 +1,11 @@
+version: '3.1'
+services:
+  k8s-demo-redis:
+    container_name: k8s-demo-redis
+    image: k8s-demo-redis
+    restart: always
+    build:
+      context: ./k8s-demo-redis
+      dockerfile: dockerfile
+    ports:
+      - "10000:10000"

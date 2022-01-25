@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbit-nfs-pv1
+  namespace: default
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-storage
+  nfs:
+    path: /root/data/nfs
+    server: 192.168.80.45
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbit-nfs-pv2
+  namespace: default
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-storage
+  nfs:
+    path: /root/data/nfs
+    server: 192.168.80.45
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbit-nfs-pv3
+  namespace: default
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-storage
+  nfs:
+    path: /root/data/nfs
+    server: 192.168.80.45

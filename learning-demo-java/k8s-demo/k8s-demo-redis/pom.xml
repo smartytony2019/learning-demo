@@ -44,6 +44,13 @@
             <artifactId>fastjson</artifactId>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.sinch</groupId>
+            <artifactId>sdk-sms</artifactId>
+            <version>1.0.5</version>
+        </dependency>
+
     </dependencies>
 
 
