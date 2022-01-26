@@ -43,7 +43,7 @@ store.file.sessionReloadReadSize=100
 store.db.datasource=druid
 store.db.dbType=mysql
 store.db.driverClassName=com.mysql.cj.jdbc.Driver
-store.db.url=jdbc:mysql://tg-mysql.tg:3306/seata?useSSL=false&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&tinyInt1isBit=false&serverTimezone=Asia/Shanghai
+store.db.url=jdbc:mysql://tg-mysql.tg:3306/tg_seata?useSSL=false&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&tinyInt1isBit=false&serverTimezone=Asia/Shanghai
 store.db.user=root
 store.db.password=123456
 store.db.minConn=5

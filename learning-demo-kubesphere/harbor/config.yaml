@@ -23,7 +23,7 @@ expose:
     notarySecretName: ""
     # The common name used to generate the certificate, it's necessary
     # when the type isn't "ingress" and "secretName" is null
-    commonName: "192.168.80.45"
+    commonName: "192.168.80.80"
   ingress:
     hosts:
       core: core.harbor.domain
@@ -98,7 +98,7 @@ expose:
 # the IP address of k8s node
 #
 # If Harbor is deployed behind the proxy, set it as the URL of proxy
-externalURL: http://192.168.80.45:30002
+externalURL: http://192.168.80.80:30002
 
 # The internal TLS used for harbor components secure communicating. In order to enable https
 # in each components tls cert files need to provided in advance.

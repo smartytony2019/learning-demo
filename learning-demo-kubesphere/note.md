@@ -561,3 +561,96 @@ docker run -d -p 2181:2181 --restart=always \
 
 
 
+
+
+### 帐号管理
+
+#### Github帐号
+
+```bash
+
+凭证 ID*：github-id
+类型：SSH
+私钥：
+-----BEGIN OPENSSH PRIVATE KEY-----
+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
+-----END OPENSSH PRIVATE KEY-----
+
+密码：111qqq///.com
+
+```
+
+
+
+#### Harbor帐号
+
+```bash
+
+凭证 ID*：hub-harbor-registry
+类型：帐户凭证
+用户名：admin
+token / 密码：Harbor12345
+
+```
+
+
+
+#### Kube配置文件
+
+```bash
+凭证 ID*：tg-kubeconfig
+类型：kubeconfig
+Content：(默认)
+
+```
+
+
+
+#### Harbor密钥
+
+```
+配置中心 > 密钥 > 创建
+
+harbor-hub-secrets tg
+类型：kubernetes.io/dockerconfigjson (镜像仓库密钥)
+
+http://192.168.80.80:30002
+admin
+Harbor12345
+```
+

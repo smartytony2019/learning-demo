@@ -1,10 +1,10 @@
 ```bash
 
-vim /etc/docker/daemon.json
+cat > /etc/docker/daemon.json <<EOF
 {
-  "insecure-registries" : ["192.168.80.45:30002"]
+  "insecure-registries" : [ "192.168.80.80:30002" ]
 }
-
+EOF
 
 sudo systemctl daemon-reload
 sudo systemctl restart docker
