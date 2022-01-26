@@ -53,10 +53,10 @@ urlencode() {
 }
 
 if [[ -z ${host} ]]; then
-    host=192.168.80.45
+    host=192.168.80.80
 fi
 if [[ -z ${port} ]]; then
-    port=31525
+    port=32135
 fi
 if [[ -z ${group} ]]; then
     group="SEATA_GROUP"

@@ -15,7 +15,7 @@ transport.shutdown.wait=3
 service.vgroupMapping.my_test_tx_group=default
 service.vgroupMapping.TEST1-GROUP=default
 service.vgroupMapping.TEST2-GROUP=default
-service.default.grouplist=tg-seata.tg1:8091
+service.default.grouplist=tg-seata.tg:8091
 service.enableDegrade=false
 service.disableGlobalTransaction=false
 client.rm.asyncCommitBufferLimit=10000
@@ -43,7 +43,7 @@ store.file.sessionReloadReadSize=100
 store.db.datasource=druid
 store.db.dbType=mysql
 store.db.driverClassName=com.mysql.cj.jdbc.Driver
-store.db.url=jdbc:mysql://tg-mysql.tg1:3306/seata?useSSL=false&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&tinyInt1isBit=false&serverTimezone=Asia/Shanghai
+store.db.url=jdbc:mysql://tg-mysql.tg:3306/seata?useSSL=false&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&tinyInt1isBit=false&serverTimezone=Asia/Shanghai
 store.db.user=root
 store.db.password=123456
 store.db.minConn=5
